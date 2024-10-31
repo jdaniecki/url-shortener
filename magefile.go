@@ -30,7 +30,7 @@ func Test() error {
 // Build builds the binary
 func Build() error {
 	fmt.Println("Building binary...")
-	cmd := exec.Command("go", "build", "-o", "url-shortener", "./cmd/url-shortener")
+	cmd := exec.Command("go", "build", "-o", "build/url-shortener", "./cmd/url-shortener")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -39,8 +39,14 @@ func Build() error {
 // Run runs the binary
 func Run() error {
 	fmt.Println("Running binary...")
-	cmd := exec.Command("./url-shortener")
+	cmd := exec.Command("./build/url-shortener")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// Clean removes the build directory
+func Clean() error {
+	fmt.Println("Removing build directory...")
+	return os.RemoveAll("build")
 }
