@@ -1,0 +1,49 @@
+openapi: 3.0.0
+info:
+  title: URL Shortener API
+  description: A simple API to shorten URLs
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080
+    description: Local server
+paths:
+  /shorten:
+    post:
+      summary: Shorten a URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  example: https://example.com
+      responses:
+        '200':
+          description: Successfully shortened URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shortUrl:
+                    type: string
+                    example: http://short.url/abc123
+        '400':
+          description: Invalid URL supplied
+  /{shortUrl}:
+    get:
+      summary: Redirect to the original URL
+      parameters:
+        - name: shortUrl
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirecting to the original URL
+        '404':
+          description: URL not found

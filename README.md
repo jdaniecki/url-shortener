@@ -4,8 +4,9 @@ URL shortener design and POC
 
 ## Prerequisites
 
-- Go 1.23+ installed. [Download here](https://golang.org/dl/).
-- Mage installed. You can install it by running `go get -u github.com/magefile/mage`.
+- `go` 1.23+ installed. You can install it by following the instructions [here](https://golang.org/dl/).
+- `mage` installed. You can install it by following the instructions [here](https://magefile.org/).
+- `oapi-codegen` installed. You can install it by following the instructions [here](https://github.com/deepmap/oapi-codegen).
 
 ## How to Build
 
