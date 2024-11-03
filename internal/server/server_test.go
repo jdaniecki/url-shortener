@@ -6,11 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/jdaniecki/url-shortener/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostShorten(t *testing.T) {
-	s := &Server{}
+	storage := persistence.NewInMemoryStorage()
+	s := NewServer(storage)
 	reqBody := bytes.NewBufferString(`{"url": "http://example.com"}`)
 	req, err := http.NewRequest("POST", "/shorten", reqBody)
 	assert.NoError(t, err, "Could not create request")
@@ -26,7 +28,9 @@ func TestPostShorten(t *testing.T) {
 }
 
 func TestGetShortUrl(t *testing.T) {
-	s := &Server{}
+	storage := persistence.NewInMemoryStorage()
+	storage.Save("http://example.com")
+	s := NewServer(storage)
 	req, err := http.NewRequest("GET", "/short/abc123", nil)
 	assert.NoError(t, err, "Could not create request")
 

@@ -1,28 +1,32 @@
 package server
 
 import (
-	"io"
-	"log"
+	"encoding/json"
 	"net/http"
+
+	"github.com/jdaniecki/url-shortener/internal/persistence"
 )
 
 type Server struct {
-	// Add any necessary fields here
+	storage persistence.Storage
+}
+
+func NewServer(storage persistence.Storage) *Server {
+	return &Server{storage: storage}
 }
 
 func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
-	// Implement the logic for shortening a URL
-	log.Printf("Received request to shorten URL: %v", r.URL)
-	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Unable to read request body", http.StatusBadRequest)
-		return
+	var req struct {
+		URL string `json:"url"`
 	}
-	log.Printf("Request body: %s", body)
+	json.NewDecoder(r.Body).Decode(&req)
+	shortUrl, _ := s.storage.Save(req.URL)
+	resp := map[string]string{"shortUrl": "http://short.url/" + shortUrl}
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
-	// Implement the logic for retrieving the original URL
-	log.Printf("Received request for short URL: %s", shortUrl)
+	originalUrl, _ := s.storage.Load(shortUrl)
+	resp := map[string]string{"originalUrl": originalUrl}
+	json.NewEncoder(w).Encode(resp)
 }
