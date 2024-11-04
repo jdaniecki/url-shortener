@@ -19,14 +19,29 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		URL string `json:"url"`
 	}
-	json.NewDecoder(r.Body).Decode(&req)
-	shortUrl, _ := s.storage.Save(req.URL)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	if req.URL == "" {
+		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
+		return
+	}
+	shortUrl, err := s.storage.Save(req.URL)
+	if err != nil {
+		http.Error(w, "Failed to save URL", http.StatusInternalServerError)
+		return
+	}
 	resp := map[string]string{"shortUrl": "http://short.url/" + shortUrl}
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
-	originalUrl, _ := s.storage.Load(shortUrl)
+	originalUrl, err := s.storage.Load(shortUrl)
+	if err != nil {
+		http.Error(w, "Failed to load URL", http.StatusNotFound)
+		return
+	}
 	resp := map[string]string{"originalUrl": originalUrl}
 	json.NewEncoder(w).Encode(resp)
 }
