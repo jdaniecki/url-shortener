@@ -42,10 +42,6 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl st
 		http.Error(w, "Failed to load URL", http.StatusNotFound)
 		return
 	}
-	resp := struct {
-		OriginalURL string `json:"originalUrl"`
-	}{
-		OriginalURL: originalUrl,
-	}
+	resp := map[string]string{"originalUrl": originalUrl}
 	json.NewEncoder(w).Encode(resp)
 }
