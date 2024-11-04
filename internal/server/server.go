@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
 )
 
 type Server struct {
 	storage persistence.Storage
 }
+
+// Make sure we conform to ServerInterface
+var _ api.ServerInterface = (*Server)(nil)
 
 func New(storage persistence.Storage) *Server {
 	return &Server{storage: storage}
