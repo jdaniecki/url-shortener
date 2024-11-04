@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
@@ -29,6 +30,7 @@ func Build() error {
 
 // Run runs the binary
 func Run() error {
+	mg.Deps(Build)
 	fmt.Println("Running binary...")
 	return sh.RunV("./build/url-shortener")
 }
@@ -37,4 +39,13 @@ func Run() error {
 func Clean() error {
 	fmt.Println("Removing build directory...")
 	return sh.Rm("build")
+}
+
+// Generate generates Go client and server code from OpenAPI spec
+func Generate() error {
+	fmt.Println("Generating code from OpenAPI spec...")
+	if err := sh.RunV("oapi-codegen", "-generate", "std-http, types", "-o", "internal/api/server.gen.go", "-package", "api", "api/openapi.yaml"); err != nil {
+		return err
+	}
+	return nil
 }
