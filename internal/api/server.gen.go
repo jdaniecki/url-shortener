@@ -12,6 +12,14 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// PostShortenJSONBody defines parameters for PostShorten.
+type PostShortenJSONBody struct {
+	Url *string `json:"url,omitempty"`
+}
+
+// PostShortenJSONRequestBody defines body for PostShorten for application/json ContentType.
+type PostShortenJSONRequestBody PostShortenJSONBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Shorten a URL

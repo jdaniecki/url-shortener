@@ -44,13 +44,7 @@ func Clean() error {
 // Generate generates Go client and server code from OpenAPI spec
 func Generate() error {
 	fmt.Println("Generating code from OpenAPI spec...")
-	if err := sh.RunV("oapi-codegen", "-generate", "types", "-o", "internal/api/types.gen.go", "-package", "api", "api/openapi.yaml"); err != nil {
-		return err
-	}
-	if err := sh.RunV("oapi-codegen", "-generate", "std-http", "-o", "internal/api/server.gen.go", "-package", "api", "api/openapi.yaml"); err != nil {
-		return err
-	}
-	if err := sh.RunV("oapi-codegen", "-generate", "spec", "-o", "internal/api/spec.gen.go", "-package", "api", "api/openapi.yaml"); err != nil {
+	if err := sh.RunV("oapi-codegen", "-generate", "std-http, types", "-o", "internal/api/server.gen.go", "-package", "api", "api/openapi.yaml"); err != nil {
 		return err
 	}
 	return nil
