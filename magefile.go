@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
@@ -29,6 +30,7 @@ func Build() error {
 
 // Run runs the binary
 func Run() error {
+	mg.Deps(Build)
 	fmt.Println("Running binary...")
 	return sh.RunV("./build/url-shortener")
 }

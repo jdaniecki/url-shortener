@@ -1,4 +1,4 @@
-package server
+package server_test
 
 import (
 	"bytes"
@@ -7,12 +7,13 @@ import (
 	"testing"
 
 	"github.com/jdaniecki/url-shortener/internal/persistence"
+	"github.com/jdaniecki/url-shortener/internal/server"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostShorten(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	s := NewServer(storage)
+	s := server.New(storage)
 	reqBody := bytes.NewBufferString(`{"url": "http://example.com"}`)
 	req, err := http.NewRequest("POST", "/shorten", reqBody)
 	assert.NoError(t, err, "Could not create request")
@@ -29,7 +30,7 @@ func TestPostShorten(t *testing.T) {
 
 func TestPostShortenInvalidJSON(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	s := NewServer(storage)
+	s := server.New(storage)
 	reqBody := bytes.NewBufferString(`{"url": "http://example.com"`)
 	req, err := http.NewRequest("POST", "/shorten", reqBody)
 	assert.NoError(t, err, "Could not create request")
@@ -43,7 +44,7 @@ func TestPostShortenInvalidJSON(t *testing.T) {
 
 func TestPostShortenEmptyURL(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	s := NewServer(storage)
+	s := server.New(storage)
 	reqBody := bytes.NewBufferString(`{"url": ""}`)
 	req, err := http.NewRequest("POST", "/shorten", reqBody)
 	assert.NoError(t, err, "Could not create request")
@@ -58,7 +59,7 @@ func TestPostShortenEmptyURL(t *testing.T) {
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
 	storage.Save("http://example.com")
-	s := NewServer(storage)
+	s := server.New(storage)
 	req, err := http.NewRequest("GET", "/short/abc123", nil)
 	assert.NoError(t, err, "Could not create request")
 
@@ -77,7 +78,7 @@ func TestGetShortUrl(t *testing.T) {
 
 func TestGetShortUrlNotFound(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	s := NewServer(storage)
+	s := server.New(storage)
 	req, err := http.NewRequest("GET", "/short/unknown", nil)
 	assert.NoError(t, err, "Could not create request")
 

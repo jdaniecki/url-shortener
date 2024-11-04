@@ -11,7 +11,7 @@ type Server struct {
 	storage persistence.Storage
 }
 
-func NewServer(storage persistence.Storage) *Server {
+func New(storage persistence.Storage) *Server {
 	return &Server{storage: storage}
 }
 

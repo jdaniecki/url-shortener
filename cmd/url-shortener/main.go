@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
+	"github.com/jdaniecki/url-shortener/internal/persistence"
 	"github.com/jdaniecki/url-shortener/internal/server"
 )
 
 func main() {
-	s := &server.Server{}
+	storage := persistence.NewInMemoryStorage()
+	s := server.New(storage)
 	handler := api.Handler(s)
 
 	log.Println("Starting server on :8080")
