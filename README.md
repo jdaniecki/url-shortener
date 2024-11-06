@@ -22,21 +22,21 @@ The response will contain the shortened URL:
 
 ```json
 {
-    "shortened_url": "http://localhost:8080/abc123"
+    "shortUrl":"http://localhost:8080/0"
 }
 ```
 
 To retrieve the original URL, send a GET request to the `/{shortened_url}` endpoint:
 
 ```sh
-curl http://localhost:8080/abc123
+curl http://localhost:8080/0
 ```
 
 The response will contain the original URL:
 
 ```json
 {
-    "url": "https://example.com"
+    "originalUrl":"https://example.com"
 }
 ```
 
