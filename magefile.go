@@ -13,7 +13,7 @@ import (
 // Lint runs markdownlint on all Markdown files
 func Lint() error {
 	fmt.Println("Running markdownlint...")
-	return sh.RunV("markdownlint", "**/*.md")
+	return sh.RunV("markdownlint", "**/*.md", "--disable", "MD013")
 }
 
 // Test runs the tests

@@ -48,7 +48,6 @@ The response will contain the original URL:
 - `mage` installed. You can install it by following the instructions [here](https://magefile.org/).
 - `oapi-codegen` installed. You can install it by following the instructions [here](https://github.com/deepmap/oapi-codegen).
 
-
 ### How to Build
 
 To build the project, run the following command:
