@@ -1,6 +1,11 @@
 package persistence
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+
+	"github.com/jdaniecki/url-shortener/internal/shortener"
+)
 
 type Storage interface {
 	Save(url string) (string, error)
@@ -16,13 +21,15 @@ func NewInMemoryStorage() *InMemoryStorage {
 }
 
 func (s *InMemoryStorage) Save(url string) (string, error) {
-	shortUrl := "abc123" // Simplified for example purposes
+	shortUrl := shortener.Shorten(url)
 	s.data[shortUrl] = url
+	log.Printf("Saved URL %v as %v\n", url, shortUrl)
 	return shortUrl, nil
 }
 
 func (s *InMemoryStorage) Load(shortUrl string) (string, error) {
 	url, exists := s.data[shortUrl]
+	log.Printf("Loaded URL %v for %v\n", url, shortUrl)
 	if !exists {
 		return "", fmt.Errorf("URL not found")
 	}

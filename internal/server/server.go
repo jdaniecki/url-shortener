@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
@@ -36,14 +37,14 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save URL", http.StatusInternalServerError)
 		return
 	}
-	resp := map[string]string{"shortUrl": "http://short.url/" + shortUrl}
+	resp := map[string]string{"shortUrl": "http://localhost:8080/" + shortUrl}
 	json.NewEncoder(w).Encode(resp)
 }
 
 func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
 	originalUrl, err := s.storage.Load(shortUrl)
 	if err != nil {
-		http.Error(w, "Failed to load URL", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Failed to load URL for %v", shortUrl), http.StatusNotFound)
 		return
 	}
 	resp := map[string]string{"originalUrl": originalUrl}

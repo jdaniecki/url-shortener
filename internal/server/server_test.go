@@ -9,6 +9,7 @@ import (
 	"github.com/jdaniecki/url-shortener/internal/persistence"
 	"github.com/jdaniecki/url-shortener/internal/server"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPostShorten(t *testing.T) {
@@ -24,7 +25,7 @@ func TestPostShorten(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code")
 
-	expected := `{"shortUrl": "http://short.url/abc123"}`
+	expected := `{"shortUrl": "http://localhost:8080/0"}`
 	assert.JSONEq(t, expected, rr.Body.String(), "handler returned unexpected body")
 }
 
@@ -60,16 +61,16 @@ func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
 	storage.Save("http://example.com")
 	s := server.New(storage)
-	req, err := http.NewRequest("GET", "/short/abc123", nil)
+	req, err := http.NewRequest("GET", "/1", nil)
 	assert.NoError(t, err, "Could not create request")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.GetShortUrl(w, r, "abc123")
+		s.GetShortUrl(w, r, "1")
 	})
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code")
+	require.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code; %v", rr.Body.String())
 
 	expected := `{"originalUrl": "http://example.com"}`
 	assert.NotNil(t, rr.Body, "handler returned nil body")
