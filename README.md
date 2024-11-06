@@ -12,13 +12,10 @@ URL shortener design and POC
 
 ## Usage
 
-To shorten a URL, send a POST request to the `/shorten` endpoint
-with a JSON body containing the URL to be shortened:
+To shorten a URL, send a POST request to the `/shorten` endpoint with a JSON body containing the URL to be shortened:
 
 ```sh
-curl -X POST http://localhost:8080/shorten \
--H "Content-Type: application/json" \
--d '{"url": "https://example.com"}'
+curl -X POST http://localhost:8080/shorten -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
 ```
 
 The response will contain the shortened URL:
@@ -50,6 +47,7 @@ The response will contain the original URL:
 - `go` 1.23+ installed. You can install it by following the instructions [here](https://golang.org/dl/).
 - `mage` installed. You can install it by following the instructions [here](https://magefile.org/).
 - `oapi-codegen` installed. You can install it by following the instructions [here](https://github.com/deepmap/oapi-codegen).
+
 
 ### How to Build
 
