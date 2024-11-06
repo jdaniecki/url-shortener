@@ -66,7 +66,7 @@ func TestGetShortUrl(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.GetShortUrl(w, r, "1")
+		s.GetShortUrl(w, r, "0")
 	})
 	handler.ServeHTTP(rr, req)
 

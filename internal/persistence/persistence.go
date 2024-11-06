@@ -13,15 +13,19 @@ type Storage interface {
 }
 
 type InMemoryStorage struct {
-	data map[string]string
+	data      map[string]string
+	shortener *shortener.Shortener
 }
 
 func NewInMemoryStorage() *InMemoryStorage {
-	return &InMemoryStorage{data: make(map[string]string)}
+	return &InMemoryStorage{
+		data:      make(map[string]string),
+		shortener: shortener.NewShortener(),
+	}
 }
 
 func (s *InMemoryStorage) Save(url string) (string, error) {
-	shortUrl := shortener.Shorten(url)
+	shortUrl := s.shortener.Shorten(url)
 	s.data[shortUrl] = url
 	log.Printf("Saved URL %v as %v\n", url, shortUrl)
 	return shortUrl, nil

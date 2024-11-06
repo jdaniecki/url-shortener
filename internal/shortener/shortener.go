@@ -1,10 +1,16 @@
 package shortener
 
-var id int = 0
+type Shortener struct {
+	id int
+}
 
-func Shorten(url string) string {
-	shortUrl := toBase62(id)
-	id++
+func NewShortener() *Shortener {
+	return &Shortener{id: 0}
+}
+
+func (s *Shortener) Shorten(url string) string {
+	shortUrl := toBase62(s.id)
+	s.id++
 	return shortUrl
 }
 
