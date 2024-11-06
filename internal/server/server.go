@@ -11,13 +11,16 @@ import (
 
 type Server struct {
 	storage persistence.Storage
+	url     string
 }
 
 // Make sure we conform to ServerInterface
 var _ api.ServerInterface = (*Server)(nil)
 
 func New(storage persistence.Storage) *Server {
-	return &Server{storage: storage}
+	return &Server{
+		storage: storage,
+		url:     "http://localhost:8080/"}
 }
 
 func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +40,7 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save URL", http.StatusInternalServerError)
 		return
 	}
-	resp := map[string]string{"shortUrl": "http://localhost:8080/" + shortUrl}
+	resp := map[string]string{"shortUrl": s.url + shortUrl}
 	json.NewEncoder(w).Encode(resp)
 }
 
