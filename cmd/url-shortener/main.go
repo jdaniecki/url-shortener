@@ -9,7 +9,11 @@ import (
 	"github.com/jdaniecki/url-shortener/internal/server"
 )
 
+var version string
+
 func main() {
+	log.Printf("Starting url-shortener version %s\n", version)
+
 	storage := persistence.NewInMemoryStorage()
 	s := server.New(storage)
 	handler := api.Handler(s)
