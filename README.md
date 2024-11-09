@@ -47,6 +47,7 @@ The response will contain the original URL:
 - `go` 1.23+ installed. You can install it by following the instructions [here](https://golang.org/dl/).
 - `mage` installed. You can install it by following the instructions [here](https://magefile.org/).
 - `oapi-codegen` installed. You can install it by following the instructions [here](https://github.com/deepmap/oapi-codegen).
+- `golangci-lint` installed. You can install it by following the instructions [here](https://golangci-lint.run/welcome/install/).
 
 ### How to Build
 

@@ -41,7 +41,9 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := map[string]string{"shortUrl": s.url + shortUrl}
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
@@ -51,5 +53,7 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl st
 		return
 	}
 	resp := map[string]string{"originalUrl": originalUrl}
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
 }
