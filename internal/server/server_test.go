@@ -58,7 +58,8 @@ func TestPostShortenEmptyURL(t *testing.T) {
 
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	storage.Save("http://example.com")
+	_, err := storage.Save("http://example.com")
+	assert.NoError(t, err, "Could not save URL")
 	s := server.New(storage)
 	req, err := http.NewRequest("GET", "/short/abc123", nil)
 	assert.NoError(t, err, "Could not create request")
