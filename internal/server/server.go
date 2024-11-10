@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
@@ -10,13 +11,16 @@ import (
 
 type Server struct {
 	storage persistence.Storage
+	url     string
 }
 
 // Make sure we conform to ServerInterface
 var _ api.ServerInterface = (*Server)(nil)
 
 func New(storage persistence.Storage) *Server {
-	return &Server{storage: storage}
+	return &Server{
+		storage: storage,
+		url:     "http://localhost:8080/"}
 }
 
 func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +40,7 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to save URL", http.StatusInternalServerError)
 		return
 	}
-	resp := map[string]string{"shortUrl": "http://short.url/" + shortUrl}
+	resp := map[string]string{"shortUrl": s.url + shortUrl}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
@@ -45,11 +49,8 @@ func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
 	originalUrl, err := s.storage.Load(shortUrl)
 	if err != nil {
-		http.Error(w, "Failed to load URL", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Failed to load URL for %v", shortUrl), http.StatusNotFound)
 		return
 	}
-	resp := map[string]string{"originalUrl": originalUrl}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	http.Redirect(w, r, originalUrl, http.StatusFound)
 }
