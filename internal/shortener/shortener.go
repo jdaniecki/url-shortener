@@ -1,7 +1,10 @@
 package shortener
 
+import "sync"
+
 type Shortener struct {
 	id int
+	mu sync.Mutex
 }
 
 func NewShortener() *Shortener {
@@ -9,6 +12,8 @@ func NewShortener() *Shortener {
 }
 
 func (s *Shortener) Shorten(url string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	shortUrl := toBase62(s.id)
 	s.id++
 	return shortUrl
