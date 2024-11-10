@@ -36,7 +36,6 @@ curl http://localhost:8080/0
 ```
 
 The response will contain redirect to the original URL.
-```
 
 ## Develop
 

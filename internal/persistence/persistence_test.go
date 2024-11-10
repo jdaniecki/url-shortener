@@ -35,7 +35,8 @@ func TestInMemoryStorage_Load(t *testing.T) {
 	}
 
 	for _, url := range urls {
-		storage.Save(url)
+		_, err := storage.Save(url)
+		assert.NoError(t, err)
 	}
 
 	tests := []struct {
