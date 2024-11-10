@@ -29,18 +29,13 @@ The response will contain the shortened URL:
 }
 ```
 
-To retrieve the original URL, send a GET request to the `/{shortened_url}` endpoint:
+To retrieve the original URL, send a GET request to the `/{shortUrl}` endpoint:
 
 ```sh
 curl http://localhost:8080/0
 ```
 
-The response will contain the original URL:
-
-```json
-{
-    "originalUrl":"https://example.com"
-}
+The response will contain redirect to the original URL.
 ```
 
 ## Develop

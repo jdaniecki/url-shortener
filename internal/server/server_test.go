@@ -62,7 +62,7 @@ func TestGetShortUrl(t *testing.T) {
 	_, err := storage.Save("http://example.com")
 	assert.NoError(t, err, "Could not save URL")
 	s := server.New(storage)
-	req, err := http.NewRequest("GET", "/1", nil)
+	req, err := http.NewRequest("GET", "/0", nil)
 	assert.NoError(t, err, "Could not create request")
 
 	rr := httptest.NewRecorder()
@@ -71,11 +71,7 @@ func TestGetShortUrl(t *testing.T) {
 	})
 	handler.ServeHTTP(rr, req)
 
-	require.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code; %v", rr.Body.String())
-
-	expected := `{"originalUrl": "http://example.com"}`
-	assert.NotNil(t, rr.Body, "handler returned nil body")
-	assert.JSONEq(t, expected, rr.Body.String(), "handler returned unexpected body")
+	require.Equal(t, http.StatusFound, rr.Code, "handler returned wrong status code; %v", rr.Body.String())
 }
 
 func TestGetShortUrlNotFound(t *testing.T) {

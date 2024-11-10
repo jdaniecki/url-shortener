@@ -52,8 +52,5 @@ func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl st
 		http.Error(w, fmt.Sprintf("Failed to load URL for %v", shortUrl), http.StatusNotFound)
 		return
 	}
-	resp := map[string]string{"originalUrl": originalUrl}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	http.Redirect(w, r, originalUrl, http.StatusFound)
 }
