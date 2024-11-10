@@ -12,10 +12,13 @@ URL shortener design and POC
 
 ## Usage
 
-To shorten a URL, send a POST request to the `/shorten` endpoint with a JSON body containing the URL to be shortened:
+To shorten a URL, send a POST request to the `/shorten` endpoint with
+a JSON body containing the URL to be shortened:
 
 ```sh
-curl -X POST http://localhost:8080/shorten -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
+curl -X POST http://localhost:8080/shorten \
+-H "Content-Type: application/json" \
+-d '{"url": "https://example.com"}'
 ```
 
 The response will contain the shortened URL:
