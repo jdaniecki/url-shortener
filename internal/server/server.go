@@ -1,9 +1,7 @@
 package server
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"context"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
@@ -14,8 +12,8 @@ type Server struct {
 	url     string
 }
 
-// Make sure we conform to ServerInterface
-var _ api.ServerInterface = (*Server)(nil)
+// Make sure we conform to StrictServerInterface
+var _ api.StrictServerInterface = (*Server)(nil)
 
 func New(storage persistence.Storage) *Server {
 	return &Server{
@@ -23,34 +21,23 @@ func New(storage persistence.Storage) *Server {
 		url:     "http://localhost:8080/"}
 }
 
-func (s *Server) PostShorten(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		URL string `json:"url"`
+func (s *Server) PostShorten(ctx context.Context, request api.PostShortenRequestObject) (api.PostShortenResponseObject, error) {
+	if request.Body == nil || request.Body.Url == nil || *request.Body.Url == "" {
+		return api.PostShorten400Response{}, nil
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-	if req.URL == "" {
-		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
-		return
-	}
-	shortUrl, err := s.storage.Save(req.URL)
+	shortUrl, err := s.storage.Save(*request.Body.Url)
 	if err != nil {
-		http.Error(w, "Failed to save URL", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
-	resp := map[string]string{"shortUrl": s.url + shortUrl}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	resp := api.PostShorten200JSONResponse{ShortUrl: &shortUrl}
+	return resp, nil
 }
 
-func (s *Server) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
-	originalUrl, err := s.storage.Load(shortUrl)
+func (s *Server) GetShortUrl(ctx context.Context, request api.GetShortUrlRequestObject) (api.GetShortUrlResponseObject, error) {
+	_, err := s.storage.Load(request.ShortUrl)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to load URL for %v", shortUrl), http.StatusNotFound)
-		return
+		return api.GetShortUrl404Response{}, nil
 	}
-	http.Redirect(w, r, originalUrl, http.StatusFound)
+	//http.Redirect(ctx.Value(http.ResponseWriter).(http.ResponseWriter), ctx.Value(http.Request).(*http.Request), originalUrl, http.StatusFound)
+	return api.GetShortUrl302Response{}, nil
 }

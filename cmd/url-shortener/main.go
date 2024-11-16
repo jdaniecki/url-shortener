@@ -16,7 +16,10 @@ func main() {
 
 	storage := persistence.NewInMemoryStorage()
 	s := server.New(storage)
-	handler := api.Handler(s)
+
+	strictHandler := api.NewStrictHandler(s, nil)
+	r := http.NewServeMux()
+	handler := api.HandlerFromMux(strictHandler, r)
 
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", handler); err != nil {
