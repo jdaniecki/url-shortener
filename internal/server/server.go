@@ -34,10 +34,10 @@ func (s *Server) PostShorten(ctx context.Context, request api.PostShortenRequest
 }
 
 func (s *Server) GetShortUrl(ctx context.Context, request api.GetShortUrlRequestObject) (api.GetShortUrlResponseObject, error) {
-	_, err := s.storage.Load(request.ShortUrl)
+	longUrl, err := s.storage.Load(request.ShortUrl)
 	if err != nil {
 		return api.GetShortUrl404Response{}, nil
 	}
-	//http.Redirect(ctx.Value(http.ResponseWriter).(http.ResponseWriter), ctx.Value(http.Request).(*http.Request), originalUrl, http.StatusFound)
-	return api.GetShortUrl302Response{}, nil
+	headers := api.GetShortUrl302ResponseHeaders{Location: longUrl}
+	return api.GetShortUrl302Response{Headers: headers}, nil
 }

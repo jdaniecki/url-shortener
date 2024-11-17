@@ -1,4 +1,4 @@
-package server
+package server_test
 
 import (
 	"context"
@@ -6,12 +6,13 @@ import (
 
 	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
+	"github.com/jdaniecki/url-shortener/internal/server"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostShorten(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	server := New(storage)
+	server := server.New(storage)
 
 	t.Run("valid URL", func(t *testing.T) {
 		req := api.PostShortenRequestObject{
@@ -32,10 +33,9 @@ func TestPostShorten(t *testing.T) {
 		assert.IsType(t, api.PostShorten400Response{}, resp)
 	})
 }
-
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	server := New(storage)
+	server := server.New(storage)
 	storage.Save("http://example.com")
 
 	t.Run("existing short URL", func(t *testing.T) {
@@ -43,6 +43,7 @@ func TestGetShortUrl(t *testing.T) {
 		resp, err := server.GetShortUrl(context.Background(), req)
 		assert.NoError(t, err)
 		assert.IsType(t, api.GetShortUrl302Response{}, resp)
+		assert.Equal(t, "http://example.com", resp.(api.GetShortUrl302Response).Headers.Location)
 	})
 
 	t.Run("non-existing short URL", func(t *testing.T) {

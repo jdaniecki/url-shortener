@@ -242,10 +242,16 @@ type GetShortUrlResponseObject interface {
 	VisitGetShortUrlResponse(w http.ResponseWriter) error
 }
 
+type GetShortUrl302ResponseHeaders struct {
+	Location string
+}
+
 type GetShortUrl302Response struct {
+	Headers GetShortUrl302ResponseHeaders
 }
 
 func (response GetShortUrl302Response) VisitGetShortUrlResponse(w http.ResponseWriter) error {
+	w.Header().Set("Location", fmt.Sprint(response.Headers.Location))
 	w.WriteHeader(302)
 	return nil
 }
