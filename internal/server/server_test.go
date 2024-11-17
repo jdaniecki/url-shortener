@@ -36,10 +36,11 @@ func TestPostShorten(t *testing.T) {
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
 	server := server.New(storage)
-	storage.Save("http://example.com")
+	expectedShortUrl, err := storage.Save("http://example.com")
+	assert.NoError(t, err)
 
 	t.Run("existing short URL", func(t *testing.T) {
-		req := api.GetShortUrlRequestObject{ShortUrl: "0"}
+		req := api.GetShortUrlRequestObject{ShortUrl: expectedShortUrl}
 		resp, err := server.GetShortUrl(context.Background(), req)
 		assert.NoError(t, err)
 		assert.IsType(t, api.GetShortUrl302Response{}, resp)
