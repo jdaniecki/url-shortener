@@ -2,23 +2,46 @@ package server
 
 import (
 	"context"
+	"log"
+	"net/http"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
+	nethttpmiddleware "github.com/oapi-codegen/nethttp-middleware"
 )
 
 type Server struct {
 	storage persistence.Storage
-	url     string
+	host    string
 }
 
 // Make sure we conform to StrictServerInterface
 var _ api.StrictServerInterface = (*Server)(nil)
 
-func New(storage persistence.Storage) *Server {
+func New(storage persistence.Storage, host string) *Server {
 	return &Server{
 		storage: storage,
-		url:     "http://localhost:8080/"}
+		host:    host,
+	}
+}
+
+func (s *Server) Serve() error {
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		return err
+	}
+
+	nethttpvalidator := nethttpmiddleware.OapiRequestValidatorWithOptions(swagger,
+		&nethttpmiddleware.Options{SilenceServersWarning: true})
+
+	serverHandler := api.Handler(api.NewStrictHandler(s, nil))
+
+	handler := nethttpvalidator(serverHandler)
+
+	if err := http.ListenAndServe(s.host, handler); err != nil {
+		log.Fatalf("could not start server: %v\n", err)
+	}
+	return nil
 }
 
 func (s *Server) PostShorten(ctx context.Context, request api.PostShortenRequestObject) (api.PostShortenResponseObject, error) {
