@@ -10,9 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var host = "localhost:8080"
+
 func TestPostShorten(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	server := server.New(storage)
+	server := server.New(storage, host)
 
 	t.Run("valid URL", func(t *testing.T) {
 		req := api.PostShortenRequestObject{
@@ -35,7 +37,7 @@ func TestPostShorten(t *testing.T) {
 }
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	server := server.New(storage)
+	server := server.New(storage, host)
 	expectedShortUrl, err := storage.Save("http://example.com")
 	assert.NoError(t, err)
 
