@@ -6,10 +6,20 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
+	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/runtime"
+	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
 // PostShortenJSONBody defines parameters for PostShorten.
@@ -202,4 +212,243 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/{shortUrl}", wrapper.GetShortUrl)
 
 	return m
+}
+
+type PostShortenRequestObject struct {
+	Body *PostShortenJSONRequestBody
+}
+
+type PostShortenResponseObject interface {
+	VisitPostShortenResponse(w http.ResponseWriter) error
+}
+
+type PostShorten200JSONResponse struct {
+	ShortUrl *string `json:"shortUrl,omitempty"`
+}
+
+func (response PostShorten200JSONResponse) VisitPostShortenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostShorten400Response struct {
+}
+
+func (response PostShorten400Response) VisitPostShortenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type GetShortUrlRequestObject struct {
+	ShortUrl string `json:"shortUrl"`
+}
+
+type GetShortUrlResponseObject interface {
+	VisitGetShortUrlResponse(w http.ResponseWriter) error
+}
+
+type GetShortUrl302ResponseHeaders struct {
+	Location string
+}
+
+type GetShortUrl302Response struct {
+	Headers GetShortUrl302ResponseHeaders
+}
+
+func (response GetShortUrl302Response) VisitGetShortUrlResponse(w http.ResponseWriter) error {
+	w.Header().Set("Location", fmt.Sprint(response.Headers.Location))
+	w.WriteHeader(302)
+	return nil
+}
+
+type GetShortUrl404Response struct {
+}
+
+func (response GetShortUrl404Response) VisitGetShortUrlResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// Shorten a URL
+	// (POST /shorten)
+	PostShorten(ctx context.Context, request PostShortenRequestObject) (PostShortenResponseObject, error)
+	// Redirect to the original URL
+	// (GET /{shortUrl})
+	GetShortUrl(ctx context.Context, request GetShortUrlRequestObject) (GetShortUrlResponseObject, error)
+}
+
+type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
+type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// PostShorten operation middleware
+func (sh *strictHandler) PostShorten(w http.ResponseWriter, r *http.Request) {
+	var request PostShortenRequestObject
+
+	var body PostShortenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostShorten(ctx, request.(PostShortenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostShorten")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostShortenResponseObject); ok {
+		if err := validResponse.VisitPostShortenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetShortUrl operation middleware
+func (sh *strictHandler) GetShortUrl(w http.ResponseWriter, r *http.Request, shortUrl string) {
+	var request GetShortUrlRequestObject
+
+	request.ShortUrl = shortUrl
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetShortUrl(ctx, request.(GetShortUrlRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetShortUrl")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetShortUrlResponseObject); ok {
+		if err := validResponse.VisitGetShortUrlResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Base64 encoded, gzipped, json marshaled Swagger object
+var swaggerSpec = []string{
+
+	"H4sIAAAAAAAC/6RTTW/bPAz+KwLPhu1+HArd+l5eBMihSJfT0IMqM7EKWdJEOlsQ+L8PlJOt+cAwYCcH",
+	"JPV88GEO4MImgj5Ah2SzS+xiAA3PityQPKrnl4XiqKiPmTGo9WpJUAE79gga1qulep1bmGUWKthhphmk",
+	"re/qFqYKYsJgkgMND3Vbt1BBMtyT0DZHZPmdIrF8Y8JsRMiiAw0vkfjIARVk/DYi8X+x28uojYExlFcm",
+	"Je9sedd8UCyIZHscTMHOgsoOC+uYvXzwhxGToKFnTqSb5lipbRzE5j5Jkzi7sIVp+lWJ7x9oGSYpiSKX",
+	"sQPNecRSoBQDzUz3bfsPOsty1rfE6mbeXD1m35h3e3f/8LeCz5N+Ha1Fos3o/f4UM3YStCT3OMs/f7II",
+	"O+NdmVE0ih3sChmNw2DyXlCP92JmoKmC5nAyMwniFm9E/T/OSYtjuZFsBmTMBPqrHCrocjdQQTBD8fl7",
+	"+DyF6tNGL3fydpHQQ3t/bXGFnctoWW6fe1Qxu60Lxhc7FfRouqLrAMs4Z3mN8aXHsiKO6nvvbF+ArHcY",
+	"WDlS+UiBHXyWu4l5MAwaxuxuJDqVUB6v2YQpRFabOIbLNP7opkAS5t1p0ee44s+ruQ/V/M85XaCXXh+J",
+	"9VP71ML0Nv0MAAD//zJV3gtQBAAA",
+}
+
+// GetSwagger returns the content of the embedded swagger specification file
+// or error if failed to decode
+func decodeSpec() ([]byte, error) {
+	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
+	if err != nil {
+		return nil, fmt.Errorf("error base64 decoding spec: %w", err)
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(zipped))
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(zr)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+var rawSpec = decodeSpecCached()
+
+// a naive cached of a decoded swagger spec
+func decodeSpecCached() func() ([]byte, error) {
+	data, err := decodeSpec()
+	return func() ([]byte, error) {
+		return data, err
+	}
+}
+
+// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
+func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
+	res := make(map[string]func() ([]byte, error))
+	if len(pathToFile) > 0 {
+		res[pathToFile] = rawSpec
+	}
+
+	return res
+}
+
+// GetSwagger returns the Swagger specification corresponding to the generated code
+// in this file. The external references of Swagger specification are resolved.
+// The logic of resolving external references is tightly connected to "import-mapping" feature.
+// Externally referenced files must be embedded in the corresponding golang packages.
+// Urls can be supported but this task was out of the scope.
+func GetSwagger() (swagger *openapi3.T, err error) {
+	resolvePath := PathToRawSpec("")
+
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
+		pathToFile := url.String()
+		pathToFile = path.Clean(pathToFile)
+		getSpec, ok := resolvePath[pathToFile]
+		if !ok {
+			err1 := fmt.Errorf("path not found: %s", pathToFile)
+			return nil, err1
+		}
+		return getSpec()
+	}
+	var specData []byte
+	specData, err = rawSpec()
+	if err != nil {
+		return
+	}
+	swagger, err = loader.LoadFromData(specData)
+	if err != nil {
+		return
+	}
+	return
 }

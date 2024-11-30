@@ -44,6 +44,12 @@ paths:
             type: string
       responses:
         '302':
-          description: Redirecting to the original URL
+          description: Redirect to the original URL
+          headers:
+            Location:
+              description: The URL to which the client is redirected
+              schema:
+                type: string
+                format: uri
         '404':
           description: URL not found

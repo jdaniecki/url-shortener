@@ -4,10 +4,7 @@ URL shortener design and POC
 
 ## TODO
 
-- [strict server](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#strict-server)
 - [tools pattern & config](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#install)
-- [validation middleware](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#requestresponse-validation-middleware)
-- [better testing](https://gitlab.com/jamietanna/httptest-openapi/)
 - [blog posts](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#blog-posts)
 
 ## Usage

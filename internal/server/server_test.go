@@ -1,90 +1,62 @@
 package server_test
 
 import (
-	"bytes"
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
 
+	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
 	"github.com/jdaniecki/url-shortener/internal/server"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
+
+var host = "localhost:8080"
 
 func TestPostShorten(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	s := server.New(storage)
-	reqBody := bytes.NewBufferString(`{"url": "http://example.com"}`)
-	req, err := http.NewRequest("POST", "/shorten", reqBody)
-	assert.NoError(t, err, "Could not create request")
+	server := server.New(storage, host)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(s.PostShorten)
-	handler.ServeHTTP(rr, req)
+	t.Run("valid URL", func(t *testing.T) {
+		req := api.PostShortenRequestObject{
+			Body: &api.PostShortenJSONRequestBody{Url: stringPtr("http://example.com")},
+		}
+		resp, err := server.PostShorten(context.Background(), req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "0", *resp.(api.PostShorten200JSONResponse).ShortUrl)
+	})
 
-	assert.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code")
-
-	expected := `{"shortUrl": "http://localhost:8080/0"}`
-	assert.JSONEq(t, expected, rr.Body.String(), "handler returned unexpected body")
+	t.Run("invalid URL", func(t *testing.T) {
+		req := api.PostShortenRequestObject{
+			Body: &api.PostShortenJSONRequestBody{Url: stringPtr("")},
+		}
+		resp, err := server.PostShorten(context.Background(), req)
+		assert.NoError(t, err)
+		assert.IsType(t, api.PostShorten400Response{}, resp)
+	})
 }
-
-func TestPostShortenInvalidJSON(t *testing.T) {
-	storage := persistence.NewInMemoryStorage()
-	s := server.New(storage)
-	reqBody := bytes.NewBufferString(`{"url": "http://example.com"`)
-	req, err := http.NewRequest("POST", "/shorten", reqBody)
-	assert.NoError(t, err, "Could not create request")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(s.PostShorten)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "handler returned wrong status code")
-}
-
-func TestPostShortenEmptyURL(t *testing.T) {
-	storage := persistence.NewInMemoryStorage()
-	s := server.New(storage)
-	reqBody := bytes.NewBufferString(`{"url": ""}`)
-	req, err := http.NewRequest("POST", "/shorten", reqBody)
-	assert.NoError(t, err, "Could not create request")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(s.PostShorten)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "handler returned wrong status code")
-}
-
 func TestGetShortUrl(t *testing.T) {
 	storage := persistence.NewInMemoryStorage()
-	_, err := storage.Save("http://example.com")
-	assert.NoError(t, err, "Could not save URL")
-	s := server.New(storage)
-	req, err := http.NewRequest("GET", "/0", nil)
-	assert.NoError(t, err, "Could not create request")
+	server := server.New(storage, host)
+	expectedShortUrl, err := storage.Save("http://example.com")
+	assert.NoError(t, err)
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.GetShortUrl(w, r, "0")
+	t.Run("existing short URL", func(t *testing.T) {
+		req := api.GetShortUrlRequestObject{ShortUrl: expectedShortUrl}
+		resp, err := server.GetShortUrl(context.Background(), req)
+		assert.NoError(t, err)
+		assert.IsType(t, api.GetShortUrl302Response{}, resp)
+		assert.Equal(t, "http://example.com", resp.(api.GetShortUrl302Response).Headers.Location)
 	})
-	handler.ServeHTTP(rr, req)
 
-	require.Equal(t, http.StatusFound, rr.Code, "handler returned wrong status code; %v", rr.Body.String())
+	t.Run("non-existing short URL", func(t *testing.T) {
+		req := api.GetShortUrlRequestObject{ShortUrl: "nonExisting"}
+		resp, err := server.GetShortUrl(context.Background(), req)
+		assert.NoError(t, err)
+		assert.IsType(t, api.GetShortUrl404Response{}, resp)
+	})
 }
 
-func TestGetShortUrlNotFound(t *testing.T) {
-	storage := persistence.NewInMemoryStorage()
-	s := server.New(storage)
-	req, err := http.NewRequest("GET", "/short/unknown", nil)
-	assert.NoError(t, err, "Could not create request")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.GetShortUrl(w, r, "unknown")
-	})
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusNotFound, rr.Code, "handler returned wrong status code")
+func stringPtr(s string) *string {
+	return &s
 }

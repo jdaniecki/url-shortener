@@ -2,7 +2,8 @@ package persistence
 
 import (
 	"fmt"
-	"log"
+
+	"log/slog"
 
 	"github.com/jdaniecki/url-shortener/internal/shortener"
 )
@@ -24,18 +25,19 @@ func NewInMemoryStorage() *InMemoryStorage {
 	}
 }
 
-func (s *InMemoryStorage) Save(url string) (string, error) {
-	shortUrl := s.shortener.Shorten(url)
-	s.data[shortUrl] = url
-	log.Printf("Saved URL %v as %v\n", url, shortUrl)
+func (s *InMemoryStorage) Save(longURL string) (string, error) {
+	shortUrl := s.shortener.Shorten(longURL)
+	s.data[shortUrl] = longURL
+	slog.Debug("URL persisted in memory", "longURL", longURL, "shortURL", shortUrl)
 	return shortUrl, nil
 }
 
 func (s *InMemoryStorage) Load(shortUrl string) (string, error) {
-	url, exists := s.data[shortUrl]
-	log.Printf("Loaded URL %v for %v\n", url, shortUrl)
+	longURL, exists := s.data[shortUrl]
 	if !exists {
+		slog.Debug("URL not found", "shortURL", shortUrl)
 		return "", fmt.Errorf("URL not found")
 	}
-	return url, nil
+	slog.Debug("URL retrived from memory", "longURL", longURL, "shortURL", shortUrl)
+	return longURL, nil
 }
