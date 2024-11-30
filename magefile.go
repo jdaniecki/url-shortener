@@ -27,7 +27,15 @@ func (s Source) Lint() error {
 		return err
 	}
 	fmt.Println("Running golangci-lint...")
-	return sh.RunV("golangci-lint", "run", "./...")
+	if err := sh.RunV("golangci-lint", "run", "./..."); err != nil {
+		return err
+	}
+
+	fmt.Println("Running hadolint...")
+	if err := sh.RunV("hadolint", "Dockerfile"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Test runs the tests
