@@ -53,6 +53,12 @@ func (s Source) Generate() error {
 	return nil
 }
 
+// Scan the source code for vulnerabilities
+func (s Source) Scan() error {
+	fmt.Println("Scanning source code...")
+	return sh.RunV("govulncheck", "./...")
+}
+
 type Binary mg.Namespace
 
 // Binary builds the binary
