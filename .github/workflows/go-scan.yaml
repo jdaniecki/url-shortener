@@ -1,0 +1,19 @@
+name: Go Scans
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Scan go code
+      uses: golang/govulncheck-action@v1
+      

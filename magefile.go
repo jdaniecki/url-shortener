@@ -27,7 +27,15 @@ func (s Source) Lint() error {
 		return err
 	}
 	fmt.Println("Running golangci-lint...")
-	return sh.RunV("golangci-lint", "run", "./...")
+	if err := sh.RunV("golangci-lint", "run", "./..."); err != nil {
+		return err
+	}
+
+	fmt.Println("Running hadolint...")
+	if err := sh.RunV("hadolint", "Dockerfile"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Test runs the tests
@@ -43,6 +51,12 @@ func (s Source) Generate() error {
 		return err
 	}
 	return nil
+}
+
+// Scan the source code for vulnerabilities
+func (s Source) Scan() error {
+	fmt.Println("Scanning source code...")
+	return sh.RunV("govulncheck", "./...")
 }
 
 type Binary mg.Namespace
@@ -108,6 +122,16 @@ func (d Docker) Push() error {
 		}
 	}
 	return sh.RunV("docker", "push", "jozefdaniecki/url-shortener:"+version)
+}
+
+// Scan scans the Docker image for vulnerabilities
+func (d Docker) Scan() error {
+	version, err := readVersion()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Scanning Docker image...")
+	return sh.RunV("trivy", "image", "--image-config-scanners", "misconfig,secret", "url-shortener:"+version)
 }
 
 // readVersion reads the version from the VERSION file and appends the current commit hash if the version contain "dev"
