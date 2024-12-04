@@ -118,6 +118,16 @@ func (d Docker) Push() error {
 	return sh.RunV("docker", "push", "jozefdaniecki/url-shortener:"+version)
 }
 
+// Scan scans the Docker image for vulnerabilities
+func (d Docker) Scan() error {
+	version, err := readVersion()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Scanning Docker image...")
+	return sh.RunV("trivy", "image", "--image-config-scanners", "misconfig,secret", "url-shortener:"+version)
+}
+
 // readVersion reads the version from the VERSION file and appends the current commit hash if the version contain "dev"
 func readVersion() (string, error) {
 	data, err := ioutil.ReadFile("VERSION")

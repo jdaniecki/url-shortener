@@ -6,6 +6,8 @@ URL shortener design and POC
 
 - [tools pattern & config](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#install)
 - [blog posts](https://github.com/oapi-codegen/oapi-codegen?tab=readme-ov-file#blog-posts)
+- API: versioning, healthz
+- Code: configfile, sqldb
 
 ## Usage
 
