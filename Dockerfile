@@ -4,20 +4,26 @@ FROM golang:1.23 AS builder
 # Set the Current Working Directory inside the container
 WORKDIR /workdir
 
+# Install mage build tool
+RUN go install github.com/magefile/mage@v1.15.0
+
 # Copy go mod and sum files
 COPY go.mod go.sum ./
 
-# Download all dependencies and install mage in a single layer. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN go mod download && go install github.com/magefile/mage@v1.15.0
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN go mod download
 
 # Copy the source from the current directory to the Working Directory inside the container
 COPY . .
 
-# Build the Go app with CGO disabled
+# Build the go binary
 RUN mage -v binary:build
 
 # Start a new stage from scratch
 FROM scratch
+
+# Run as non-root user
+USER 1000:1000
 
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /workdir/build/url-shortener /url-shortener
@@ -26,4 +32,5 @@ COPY --from=builder /workdir/build/url-shortener /url-shortener
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["/url-shortener"]
+ENTRYPOINT ["/url-shortener"]
+CMD ["-port", "8080"]
