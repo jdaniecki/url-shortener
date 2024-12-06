@@ -32,6 +32,9 @@ type PostShortenJSONRequestBody PostShortenJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Check the health of the service
+	// (GET /health)
+	GetHealth(w http.ResponseWriter, r *http.Request)
 	// Shorten a URL
 	// (POST /shorten)
 	PostShorten(w http.ResponseWriter, r *http.Request)
@@ -48,6 +51,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetHealth operation middleware
+func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // PostShorten operation middleware
 func (siw *ServerInterfaceWrapper) PostShorten(w http.ResponseWriter, r *http.Request) {
@@ -208,10 +225,34 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/health", wrapper.GetHealth)
 	m.HandleFunc("POST "+options.BaseURL+"/shorten", wrapper.PostShorten)
 	m.HandleFunc("GET "+options.BaseURL+"/{shortUrl}", wrapper.GetShortUrl)
 
 	return m
+}
+
+type GetHealthRequestObject struct {
+}
+
+type GetHealthResponseObject interface {
+	VisitGetHealthResponse(w http.ResponseWriter) error
+}
+
+type GetHealth200Response struct {
+}
+
+func (response GetHealth200Response) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type GetHealth503Response struct {
+}
+
+func (response GetHealth503Response) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.WriteHeader(503)
+	return nil
 }
 
 type PostShortenRequestObject struct {
@@ -273,6 +314,9 @@ func (response GetShortUrl404Response) VisitGetShortUrlResponse(w http.ResponseW
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Check the health of the service
+	// (GET /health)
+	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
 	// Shorten a URL
 	// (POST /shorten)
 	PostShorten(ctx context.Context, request PostShortenRequestObject) (PostShortenResponseObject, error)
@@ -308,6 +352,30 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetHealth operation middleware
+func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
+	var request GetHealthRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHealth(ctx, request.(GetHealthRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHealth")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
+		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // PostShorten operation middleware
@@ -370,15 +438,16 @@ func (sh *strictHandler) GetShortUrl(w http.ResponseWriter, r *http.Request, sho
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6RTTW/bPAz+KwLPhu1+HArd+l5eBMihSJfT0IMqM7EKWdJEOlsQ+L8PlJOt+cAwYCcH",
-	"JPV88GEO4MImgj5Ah2SzS+xiAA3PityQPKrnl4XiqKiPmTGo9WpJUAE79gga1qulep1bmGUWKthhphmk",
-	"re/qFqYKYsJgkgMND3Vbt1BBMtyT0DZHZPmdIrF8Y8JsRMiiAw0vkfjIARVk/DYi8X+x28uojYExlFcm",
-	"Je9sedd8UCyIZHscTMHOgsoOC+uYvXzwhxGToKFnTqSb5lipbRzE5j5Jkzi7sIVp+lWJ7x9oGSYpiSKX",
-	"sQPNecRSoBQDzUz3bfsPOsty1rfE6mbeXD1m35h3e3f/8LeCz5N+Ha1Fos3o/f4UM3YStCT3OMs/f7II",
-	"O+NdmVE0ih3sChmNw2DyXlCP92JmoKmC5nAyMwniFm9E/T/OSYtjuZFsBmTMBPqrHCrocjdQQTBD8fl7",
-	"+DyF6tNGL3fydpHQQ3t/bXGFnctoWW6fe1Qxu60Lxhc7FfRouqLrAMs4Z3mN8aXHsiKO6nvvbF+ArHcY",
-	"WDlS+UiBHXyWu4l5MAwaxuxuJDqVUB6v2YQpRFabOIbLNP7opkAS5t1p0ee44s+ruQ/V/M85XaCXXh+J",
-	"9VP71ML0Nv0MAAD//zJV3gtQBAAA",
+	"H4sIAAAAAAAC/5xTzW7bMAx+FYFnw3abDih063bYCvRQNMtp6EGVmUidLGkSnS0I/O4DZWdrkyAYdnIi",
+	"UR+/H3IP1q8DyD10mHWykWzwIOFOZNtHh+Lu8V5QENmEROjF6ukhQwVkySFIWD09iOV0hYlroYItpjyB",
+	"tPVV3cJYQYjoVbQgYVG3dQsVREUmc9vGoHJk+OcGiT8hYlJM474DCZ+RvkwVFSTMMfiM5eF1257SXmLa",
+	"Wo3CZjHh7rj9h3ZxsXTwf4rHCvLQ9yrtQMIng/q7IIMzmAjr8i9PT0t1MzvDDWLIZxQ8hkyzR0XDjwEz",
+	"fQzdjkt18IS+vFIxOqvLu+Y1h4KYtcFeFezEqGQn8UNy/MFfikMCCYYoZtk080mtQ88x7SJfZkrWbwrd",
+	"+SS8vKImGPmIGdmEHUhKA47nbf5PnsWc1Tmyspmcq4fkGvWir64X/0r4KMdBa8x5PTi3O4wpdjyoHP3N",
+	"uSm591vlbKkReWA52B1FPwcm1ATEQe8PYsZLw7o8KOYZT6pHwpRBfuNFA1nmHirwqi86/xa/T6F64+ix",
+	"J89HCS3a61OJT9jZhJp4d3lkQ7Ib65UrciowqLrCaw8PYcryFOOrwWIRBfHTWG0KkHYWPfHWpLkFdvCW",
+	"7jqkXhFIGJI9k+hYQrk57cadfCCxDoM/TuOimgLJK3kw+j0u63Niuodq2pzDBDq+MyGTvG1vWxifx98B",
+	"AAD//5hQRk4QBQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

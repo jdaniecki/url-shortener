@@ -104,12 +104,17 @@ func (d Docker) Build() error {
 
 // Run runs the Docker container
 func (d Docker) Run() error {
+	fmt.Println("Running Docker container...")
+
 	version, err := readVersion()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Running Docker container...")
-	return sh.RunV("docker", "run", "-p", "8080:8080", "url-shortener:"+version)
+
+	cmd := "docker"
+	args := []string{"run", "-p", "8080:80", "url-shortener:" + version}
+	fmt.Println(cmd, strings.Join(args, " "))
+	return sh.RunV(cmd, args...)
 }
 
 // Push pushes the Docker image to the registry

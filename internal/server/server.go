@@ -76,3 +76,7 @@ func (s *Server) GetShortUrl(ctx context.Context, request api.GetShortUrlRequest
 	headers := api.GetShortUrl302ResponseHeaders{Location: longUrl}
 	return api.GetShortUrl302Response{Headers: headers}, nil
 }
+
+func (s *Server) GetHealth(ctx context.Context, request api.GetHealthRequestObject) (api.GetHealthResponseObject, error) {
+	return api.GetHealth200Response{}, nil
+}
