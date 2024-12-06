@@ -53,3 +53,11 @@ paths:
                 format: uri
         '404':
           description: URL not found
+  /health:
+    get:
+      summary: Check the health of the service
+      responses:
+        '200':
+          description: Service is healthy
+        '503':
+          description: Service is unhealthy

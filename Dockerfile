@@ -28,9 +28,9 @@ USER 1000:1000
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /workdir/build/url-shortener /url-shortener
 
-# Expose port 8080 to the outside world
-EXPOSE 8080
+# Expose port 80 to the outside world
+EXPOSE 80
 
 # Command to run the executable
 ENTRYPOINT ["/url-shortener"]
-CMD ["-port", "8080"]
+CMD ["-port", "80"]
