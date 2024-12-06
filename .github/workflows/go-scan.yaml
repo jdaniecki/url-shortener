@@ -1,4 +1,4 @@
-name: Go Scans
+name: Go source security scans
 
 on:
   push:
