@@ -38,12 +38,6 @@ func (s Source) Lint() error {
 	return nil
 }
 
-// Test runs the tests
-func (s Source) Test() error {
-	fmt.Println("Running tests...")
-	return sh.RunV("go", "test", "./...")
-}
-
 // Generate generates Go client and server code from OpenAPI spec
 func (s Source) Generate() error {
 	fmt.Println("Generating code from OpenAPI spec...")
@@ -79,6 +73,21 @@ func (b Binary) Run() error {
 	mg.Deps(b.Build)
 	fmt.Println("Running binary...")
 	return sh.RunV("./build/url-shortener")
+}
+
+// Test runs the tests
+func (b Binary) Test() error {
+	fmt.Println("Running tests with race detector...")
+	return sh.RunV("go", "test", "-race", "-cover", "./...")
+}
+
+// Generate coverage report in HTML format
+func (b Binary) Coverage() error {
+	fmt.Println("Running tests with coverage and generating report...")
+	if err := sh.RunV("go", "test", "-coverprofile=build/coverage.out", "./..."); err != nil {
+		return err
+	}
+	return sh.RunV("go", "tool", "cover", "-html=build/coverage.out", "-o", "build/coverage.html")
 }
 
 type Docker mg.Namespace
