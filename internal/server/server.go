@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -63,7 +64,8 @@ func (s *Server) PostShorten(ctx context.Context, request api.PostShortenRequest
 	if err != nil {
 		return nil, err
 	}
-	resp := api.PostShorten200JSONResponse{ShortUrl: &shortUrl}
+	u := fmt.Sprintf("http://%s/%s", s.host, shortUrl)
+	resp := api.PostShorten200JSONResponse{ShortUrl: &u}
 	return resp, nil
 }
 
