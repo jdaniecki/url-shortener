@@ -9,6 +9,7 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.0
+	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.9.0
 )
 

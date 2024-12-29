@@ -8,6 +8,7 @@ import (
 	"github.com/jdaniecki/url-shortener/internal/api"
 	"github.com/jdaniecki/url-shortener/internal/persistence"
 	nethttpmiddleware "github.com/oapi-codegen/nethttp-middleware"
+	"github.com/rs/cors"
 )
 
 type Server struct {
@@ -43,8 +44,8 @@ func (s *Server) Serve() error {
 		}})
 
 	serverHandler := api.Handler(api.NewStrictHandler(s, nil))
-
 	handler := nethttpvalidator(serverHandler)
+	handler = cors.Default().Handler(handler)
 
 	if err := http.ListenAndServe(s.host, handler); err != nil {
 		return err
