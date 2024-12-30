@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jdaniecki/url-shortener/internal/api"
@@ -23,7 +24,7 @@ func TestPostShorten(t *testing.T) {
 		resp, err := server.PostShorten(context.Background(), req)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
-		assert.Equal(t, "0", *resp.(api.PostShorten200JSONResponse).ShortUrl)
+		assert.Equal(t, fmt.Sprintf("http://%v/%v", host, "0"), *resp.(api.PostShorten200JSONResponse).ShortUrl)
 	})
 
 	t.Run("invalid URL", func(t *testing.T) {

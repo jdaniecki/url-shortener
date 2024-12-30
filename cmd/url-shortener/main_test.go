@@ -80,7 +80,7 @@ var _ = Describe("Main", func() {
 			Expect(shortURL).NotTo(BeEmpty())
 
 			// retrive the short URL
-			resp, err = http.Get(serverURL + "/" + shortURL)
+			resp, err = http.Get(shortURL)
 			Expect(err).NotTo(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
